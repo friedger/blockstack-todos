@@ -94,7 +94,7 @@ export const TodoList = () => {
             <Sharer
               isPublic={isPublic}
               togglePublic={() => {
-                void saveTasks(userSession, tasks, !isPublic);
+                saveTasks(userSession, tasks, !isPublic);
                 setIsPublic(!isPublic);
               }}
             />
