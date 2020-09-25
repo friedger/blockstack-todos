@@ -51,6 +51,7 @@ export const Sharer = ({ togglePublic, isPublic }) => {
                 <Box>
                   <ChainIcon />
                 </Box>
+
                 <Box px={3}>
                   <Text fontWeight="500" display="block" mb={0} fontSize={2}>
                     Public
@@ -69,13 +70,6 @@ export const Sharer = ({ togglePublic, isPublic }) => {
                   >
                     Make private
                   </Text>
-                </Box>
-              </Flex>
-            </Box>
-            <Box width="100%" mt={5}>
-              <Flex>
-                <Box>
-                  <ChainIcon />
                 </Box>
                 <Box px={3}>
                   <PublicUrlRegisterer userSession={userSession} />
