@@ -29,7 +29,7 @@ export const Sharer = ({ togglePublic, isPublic }) => {
                   <Text fontWeight="500" display="block" fontSize={1} mb={1}>
                     Share your to-do's
                   </Text>
-                  <Input value={url} isDisabled backgroundColor="#F0F0F5" />
+                  <Input value={url} readOnly isDisabled backgroundColor="#F0F0F5" />
                 </Box>
                 <Box pl={4}>
                   <Text

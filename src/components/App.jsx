@@ -6,6 +6,7 @@ import { UserSession } from 'blockstack';
 import { appConfig } from '../assets/constants';
 import { Connect } from '@blockstack/connect';
 import { TodoList } from './TodoList';
+import { RecentActivities } from './RecentActivities';
 
 const userSession = new UserSession({ appConfig });
 
@@ -44,6 +45,7 @@ export default class App extends Component {
                 ) : (
                   <TodoList />
                 )}
+                <RecentActivities />
               </div>
             </div>
           </ToastProvider>

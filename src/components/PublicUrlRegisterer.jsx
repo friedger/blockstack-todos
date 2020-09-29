@@ -5,7 +5,6 @@ import { bufferCVFromString } from '@blockstack/stacks-transactions';
 import { connectWebSocketClient } from '@stacks/blockchain-api-client';
 import { CONTRACT_ADDRESS, CONTRACT_NAME } from '../assets/constants';
 import { Transaction } from './Transaction';
-import { RecentActivities } from './RecentActivities';
 
 export const PublicUrlRegisterer = ({ userSession }) => {
   const { doContractCall } = useConnect();
@@ -27,21 +26,27 @@ export const PublicUrlRegisterer = ({ userSession }) => {
     });
 
   useEffect(() => {
-    let sub;
-    const subscribe = async txId => {
-      try {
-        const client = await connectWebSocketClient(
-          'ws://stacks-node-api-latest.krypton.blockstack.xyz/'
-        );
-        sub = await client.subscribeTxUpdates(txId, update => {
-          console.log(update);
-          setSuccess(update.tx_status === 'success');
-        });
-      } catch (e) {
-        console.log(e);
-      }
-    };
-    subscribe(txId);
+    if (txId) {
+      let sub;
+      const subscribe = async txId => {
+        try {
+          const client = await connectWebSocketClient(
+            'ws://stacks-node-api.krypton.blockstack.org/'
+          );
+          sub = await client.subscribeTxUpdates(txId, update => {
+            console.log(update);
+            const wasSuccessful = update.tx_status === 'success';
+            setSuccess(wasSuccessful);
+            if (wasSuccessful) {
+              sub.unsubscribe();
+            }
+          });
+        } catch (e) {
+          console.log(e);
+        }
+      };
+      subscribe(txId);
+    }
   }, [txId]);
 
   return (
@@ -65,7 +70,6 @@ export const PublicUrlRegisterer = ({ userSession }) => {
         Anyone will be able to find your list
       </Text>
       {success && <Transaction txId={txId} />}
-      <RecentActivities />
     </>
   );
 };
