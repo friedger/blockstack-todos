@@ -75,16 +75,18 @@ export const RecentActivities = () => {
 
             console.log({ ownerOfResponse });
 
-            setNewestRegistation({
-              name: cvToString(registryData.name),
-              url: cvToString(registryData.url),
-              lastId: lastId.toString(),
-              owner: ownerOfResponse.okay
-                ? cvToString(
-                    deserializeCV(Buffer.from(ownerOfResponse.result.substr(2), 'hex')).value
-                  )
-                : '???',
-            });
+            if (ownerOfResponse.okay) {
+              const owner = cvToString(
+                deserializeCV(Buffer.from(ownerOfResponse.result.substr(2), 'hex')).value
+              );
+
+              setNewestRegistation({
+                name: cvToString(registryData.name),
+                url: cvToString(registryData.url),
+                lastId: lastId.toString(),
+                owner,
+              });
+            }
           }
         }
       }
@@ -96,8 +98,6 @@ export const RecentActivities = () => {
     fetchNewestRegistration();
   }, [fetchActivities, fetchNewestRegistration]);
 
-  console.log({ activities });
-  console.log({ newestRegistration });
   return activities && activities.length > 0 ? (
     <Flex
       display="block"
@@ -123,15 +123,25 @@ export const RecentActivities = () => {
         )}
         <Text fontWeight="500" display="block" mb={0} fontSize={2}>
           Recent Activities:{' '}
-          {activities.map(activity => {
-            const result = deserializeCV(Buffer.from(activity.tx_result.hex.substr(2), 'hex'));
-            const action =
-              activity.contract_call.function_name === 'update' ? 'updated' : 'registered';
-            return (
-              <>
-                Entry {result.value ? result.value.toString() : ''} was {action}.
-              </>
-            );
+          {activities.map((activity, key) => {
+            if (activity.contract_call.function_name === 'update') {
+              const name = deserializeCV(
+                Buffer.from(activity.contract_call.function_args[0].hex.substr(2), 'hex')
+              );
+
+              return (
+                <React.Fragment key={key}>
+                  Entry for {cvToString(name)} was updated.{' '}
+                </React.Fragment>
+              );
+            } else {
+              const result = deserializeCV(Buffer.from(activity.tx_result.hex.substr(2), 'hex'));
+              return (
+                <React.Fragment key={key}>
+                  Entry {result.value.toString()} was registered.{' '}
+                </React.Fragment>
+              );
+            }
           })}
         </Text>
       </Box>
