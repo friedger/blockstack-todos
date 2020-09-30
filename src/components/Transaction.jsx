@@ -20,7 +20,7 @@ export const Transaction = ({ txId }) => {
 
   return transactionDetails ? (
     <Text fontWeight="500" display="block" mb={0} fontSize={2}>
-      Registration status {transactionDetails.tx_status}
+      Registration: Result {JSON.stringify(transactionDetails.tx_result)}{' '}
     </Text>
   ) : null;
 };

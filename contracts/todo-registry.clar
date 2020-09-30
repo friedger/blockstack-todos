@@ -70,9 +70,16 @@
 ;; Public read-only functions
 ;;
 
-;; Returns the stx address that owns the registry entry
-(define-read-only (owner-of (name (buff 30)))
-  (nft-get-owner? entry-owner-nft (registry-id-for name))
+;; Returns the stx address that owns the registry entry 
+;; with the given username
+(define-read-only (owner-of-by-name (name (buff 30)))
+  (owner-of (registry-id-for name))
+)
+
+;; Returns the stx address that owns the registry entry 
+;; with the given id
+(define-read-only (owner-of (registry-id uint))
+  (nft-get-owner? entry-owner-nft registry-id)
 )
 
 ;; Returns the registry id of the newest entry

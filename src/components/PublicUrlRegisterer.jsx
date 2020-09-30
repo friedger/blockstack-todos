@@ -14,13 +14,14 @@ export const PublicUrlRegisterer = ({ userSession }) => {
   const [success, setSuccess] = useState();
 
   const register = () =>
+    // do the contract call
     doContractCall({
       contractAddress: CONTRACT_ADDRESS,
       contractName: CONTRACT_NAME,
       functionName: 'register',
       functionArgs: [bufferCVFromString(username), bufferCVFromString(url)],
       finished: data => {
-        console.log(data);
+        console.log({ data });
         setTxId(data.txId);
       },
     });
@@ -61,6 +62,7 @@ export const PublicUrlRegisterer = ({ userSession }) => {
         fontWeight="500"
         display="inline-block"
         onClick={() => {
+          // register the public url
           register();
         }}
       >

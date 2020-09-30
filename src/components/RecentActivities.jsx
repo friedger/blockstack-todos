@@ -7,6 +7,7 @@ import {
 } from '@stacks/blockchain-api-client';
 import { CONTRACT_ADDRESS, CONTRACT_NAME } from '../assets/constants';
 import {
+  bufferCVFromString,
   ClarityType,
   cvToString,
   deserializeCV,
@@ -27,6 +28,7 @@ export const RecentActivities = () => {
   };
 
   const fetchActivities = useCallback(async () => {
+    // fetch activities
     const response = await accountsApi.getAccountTransactions({
       principal: `${CONTRACT_ADDRESS}.${CONTRACT_NAME}`,
     });
@@ -34,6 +36,7 @@ export const RecentActivities = () => {
   }, []);
 
   const fetchNewestRegistration = useCallback(async () => {
+    // fetch last registry id
     const getLastIdResponse = await smartContractsApi.callReadOnlyFunction({
       stacksAddress: CONTRACT_ADDRESS,
       contractName: CONTRACT_NAME,
@@ -43,46 +46,58 @@ export const RecentActivities = () => {
         arguments: [],
       }),
     });
+    console.log(getLastIdResponse);
+
     if (getLastIdResponse.okay) {
       const lastIdCV = deserializeCV(Buffer.from(getLastIdResponse.result.substr(2), 'hex'));
       const lastId = lastIdCV.value;
       if (lastId > 0) {
-        const mapEntryResponseRaw = await smartContractsApi.getContractDataMapEntryRaw({
+        // fetch owner
+        const ownerOfResponse = await smartContractsApi.callReadOnlyFunction({
           stacksAddress: CONTRACT_ADDRESS,
           contractName: CONTRACT_NAME,
-          mapName: 'registry',
-          key: `0x${serializeCV(tupleCV({ 'registry-id': uintCV(lastId) })).toString('hex')}`,
-          proof: 0,
+          functionName: 'owner-of',
+          readOnlyFunctionArgs: ReadOnlyFunctionArgsFromJSON({
+            sender: CONTRACT_ADDRESS,
+            arguments: [`0x${serializeCV(bufferCVFromString('friedger.id')).toString('hex')}`],
+          }),
         });
-        const mapEntryResponse = await mapEntryResponseRaw.raw.json();
-        console.log({ mapEntryResponse });
 
-        if (mapEntryResponse) {
-          const mapEntry = deserializeCV(Buffer.from(mapEntryResponse.data.substr(2), 'hex'));
-          console.log({ mapEntry });
-          if (mapEntry.type === ClarityType.OptionalSome) {
-            const registryData = mapEntry.value.data;
+        console.log({ ownerOfResponse });
 
-            const ownerOfResponse = await smartContractsApi.callReadOnlyFunction({
-              stacksAddress: CONTRACT_ADDRESS,
-              contractName: CONTRACT_NAME,
-              functionName: 'owner-of',
-              readOnlyFunctionArgs: ReadOnlyFunctionArgsFromJSON({
-                sender: CONTRACT_ADDRESS,
-                arguments: [`0x${serializeCV(registryData.name).toString('hex')}`],
-              }),
-            });
+        if (ownerOfResponse.okay) {
+          const owner = cvToString(
+            deserializeCV(Buffer.from(ownerOfResponse.result.substr(2), 'hex')).value
+          );
 
-            console.log({ ownerOfResponse });
+          // fetch public url and name
+          const key = `0x${serializeCV(tupleCV({ 'registry-id': uintCV(lastId) })).toString(
+            'hex'
+          )}`;
+          const mapEntryResponseRaw = await smartContractsApi.getContractDataMapEntryRaw({
+            stacksAddress: CONTRACT_ADDRESS,
+            contractName: CONTRACT_NAME,
+            mapName: 'registry',
+            key,
+            proof: 0,
+          });
+          const mapEntryResponse = await mapEntryResponseRaw.raw.json();
+          console.log({ mapEntryResponse });
 
-            if (ownerOfResponse.okay) {
-              const owner = cvToString(
-                deserializeCV(Buffer.from(ownerOfResponse.result.substr(2), 'hex')).value
-              );
+          if (mapEntryResponse) {
+            const optionalMapEntry = deserializeCV(
+              Buffer.from(mapEntryResponse.data.substr(2), 'hex')
+            );
+            console.log({ optionalMapEntry });
+            if (optionalMapEntry.type === ClarityType.OptionalSome) {
+              const mapEntryCV = optionalMapEntry.value;
+              const registryData = mapEntryCV.data;
+              const name = cvToString(registryData.name);
+              const url = cvToString(registryData.url);
 
               setNewestRegistation({
-                name: cvToString(registryData.name),
-                url: cvToString(registryData.url),
+                name,
+                url,
                 lastId: lastId.toString(),
                 owner,
               });
@@ -97,6 +112,8 @@ export const RecentActivities = () => {
     fetchActivities();
     fetchNewestRegistration();
   }, [fetchActivities, fetchNewestRegistration]);
+
+  console.log({ activities });
 
   return activities && activities.length > 0 ? (
     <Flex
@@ -124,7 +141,14 @@ export const RecentActivities = () => {
         <Text fontWeight="500" display="block" mb={0} fontSize={2}>
           Recent Activities:{' '}
           {activities.map((activity, key) => {
-            if (activity.contract_call.function_name === 'update') {
+            if (activity.contract_call.function_name === 'register') {
+              const result = deserializeCV(Buffer.from(activity.tx_result.hex.substr(2), 'hex'));
+              return (
+                <React.Fragment key={key}>
+                  Entry {result.value.toString()} was registered at {activity.burn_block_time_iso}.{' '}
+                </React.Fragment>
+              );
+            } else {
               const name = deserializeCV(
                 Buffer.from(activity.contract_call.function_args[0].hex.substr(2), 'hex')
               );
@@ -132,13 +156,6 @@ export const RecentActivities = () => {
               return (
                 <React.Fragment key={key}>
                   Entry for {cvToString(name)} was updated.{' '}
-                </React.Fragment>
-              );
-            } else {
-              const result = deserializeCV(Buffer.from(activity.tx_result.hex.substr(2), 'hex'));
-              return (
-                <React.Fragment key={key}>
-                  Entry {result.value.toString()} was registered.{' '}
                 </React.Fragment>
               );
             }
