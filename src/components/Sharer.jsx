@@ -2,7 +2,7 @@ import React from 'react';
 import { Flex, Box, Text, Input, useClipboard } from '@blockstack/ui';
 import { ChainIcon } from './icons/chain';
 import { useConnect } from '@blockstack/connect';
-import { PublicUrlRegisterer } from './PublicUrlRegisterer';
+import { PublicUrlRegistrar } from './PublicUrlRegistrar';
 
 export const Sharer = ({ togglePublic, isPublic }) => {
   const { authOptions } = useConnect();
@@ -72,7 +72,7 @@ export const Sharer = ({ togglePublic, isPublic }) => {
                   </Text>
                 </Box>
                 <Box px={3}>
-                  <PublicUrlRegisterer userSession={userSession} />
+                  <PublicUrlRegistrar userSession={userSession} />
                 </Box>
               </Flex>
             </Box>

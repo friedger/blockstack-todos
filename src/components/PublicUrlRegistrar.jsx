@@ -6,7 +6,7 @@ import { connectWebSocketClient } from '@stacks/blockchain-api-client';
 import { CONTRACT_ADDRESS, CONTRACT_NAME } from '../assets/constants';
 import { Transaction } from './Transaction';
 
-export const PublicUrlRegisterer = ({ userSession }) => {
+export const PublicUrlRegistrar = ({ userSession }) => {
   const { doContractCall } = useConnect();
   const { username } = userSession.loadUserData();
   const url = `${document.location.origin}/todos/${username}`;
