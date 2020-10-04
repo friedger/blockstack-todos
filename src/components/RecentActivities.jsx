@@ -6,22 +6,15 @@ import {
   SmartContractsApi,
 } from '@stacks/blockchain-api-client';
 import { CONTRACT_ADDRESS, CONTRACT_NAME } from '../assets/constants';
-import {
-  bufferCVFromString,
-  ClarityType,
-  cvToString,
-  deserializeCV,
-  serializeCV,
-  tupleCV,
-  uintCV,
-} from '@blockstack/stacks-transactions';
+import { ClarityType, cvToString, tupleCV, uintCV } from '@blockstack/stacks-transactions';
+import { cvToHex, hexToCV } from '../utils';
 
 const accountsApi = new AccountsApi();
 const smartContractsApi = new SmartContractsApi();
 
 export const RecentActivities = () => {
   const [activities, setActivities] = useState();
-  const [newestRegistration, setNewestRegistation] = useState();
+  const [firstRegistration, setFirstRegistration] = useState();
 
   const contractCallsOnly = r => {
     return r.tx_status === 'success' && r.tx_type === 'contract_call';
@@ -35,74 +28,49 @@ export const RecentActivities = () => {
     setActivities(response.results.filter(contractCallsOnly));
   }, []);
 
-  const fetchNewestRegistration = useCallback(async () => {
-    // fetch last registry id
-    const getLastIdResponse = await smartContractsApi.callReadOnlyFunction({
-      stacksAddress: CONTRACT_ADDRESS,
+  const fetchRegistration = useCallback(async () => {
+    // fetch owner
+    const ownerOfResponse = await smartContractsApi.callReadOnlyFunction({
+      contractAddress: CONTRACT_ADDRESS,
       contractName: CONTRACT_NAME,
-      functionName: 'get-last-registry-id',
+      functionName: 'owner-of?',
       readOnlyFunctionArgs: ReadOnlyFunctionArgsFromJSON({
         sender: CONTRACT_ADDRESS,
-        arguments: [],
+        arguments: [cvToHex(uintCV(1))],
       }),
     });
-    console.log(getLastIdResponse);
 
-    if (getLastIdResponse.okay) {
-      const lastIdCV = deserializeCV(Buffer.from(getLastIdResponse.result.substr(2), 'hex'));
-      const lastId = lastIdCV.value;
-      if (lastId > 0) {
-        // fetch owner
-        const ownerOfResponse = await smartContractsApi.callReadOnlyFunction({
-          stacksAddress: CONTRACT_ADDRESS,
-          contractName: CONTRACT_NAME,
-          functionName: 'owner-of',
-          readOnlyFunctionArgs: ReadOnlyFunctionArgsFromJSON({
-            sender: CONTRACT_ADDRESS,
-            arguments: [`0x${serializeCV(bufferCVFromString('friedger.id')).toString('hex')}`],
-          }),
-        });
+    console.log({ ownerOfResponse });
 
-        console.log({ ownerOfResponse });
+    if (ownerOfResponse.okay) {
+      const ownerCV = hexToCV(ownerOfResponse.result);
+      const owner = cvToString(ownerCV);
 
-        if (ownerOfResponse.okay) {
-          const owner = cvToString(
-            deserializeCV(Buffer.from(ownerOfResponse.result.substr(2), 'hex')).value
-          );
+      // fetch public url and name
+      const key = cvToHex(tupleCV({ 'registry-id': uintCV(1) }));
+      const mapEntryResponse = await smartContractsApi.getContractDataMapEntry({
+        contractAddress: CONTRACT_ADDRESS,
+        contractName: CONTRACT_NAME,
+        mapName: 'registry',
+        key,
+        proof: 0,
+      });
+      console.log({ mapEntryResponse });
 
-          // fetch public url and name
-          const key = `0x${serializeCV(tupleCV({ 'registry-id': uintCV(lastId) })).toString(
-            'hex'
-          )}`;
-          const mapEntryResponseRaw = await smartContractsApi.getContractDataMapEntryRaw({
-            stacksAddress: CONTRACT_ADDRESS,
-            contractName: CONTRACT_NAME,
-            mapName: 'registry',
-            key,
-            proof: 0,
+      if (mapEntryResponse) {
+        const optionalMapEntry = hexToCV(mapEntryResponse.data);
+        console.log({ optionalMapEntry });
+        if (optionalMapEntry.type === ClarityType.OptionalSome) {
+          const mapEntryCV = optionalMapEntry.value;
+          const registryData = mapEntryCV.data;
+          const name = cvToString(registryData.name);
+          const url = cvToString(registryData.url);
+
+          setFirstRegistration({
+            name,
+            url,
+            owner,
           });
-          const mapEntryResponse = await mapEntryResponseRaw.raw.json();
-          console.log({ mapEntryResponse });
-
-          if (mapEntryResponse) {
-            const optionalMapEntry = deserializeCV(
-              Buffer.from(mapEntryResponse.data.substr(2), 'hex')
-            );
-            console.log({ optionalMapEntry });
-            if (optionalMapEntry.type === ClarityType.OptionalSome) {
-              const mapEntryCV = optionalMapEntry.value;
-              const registryData = mapEntryCV.data;
-              const name = cvToString(registryData.name);
-              const url = cvToString(registryData.url);
-
-              setNewestRegistation({
-                name,
-                url,
-                lastId: lastId.toString(),
-                owner,
-              });
-            }
-          }
         }
       }
     }
@@ -110,8 +78,8 @@ export const RecentActivities = () => {
 
   useEffect(() => {
     fetchActivities();
-    fetchNewestRegistration();
-  }, [fetchActivities, fetchNewestRegistration]);
+    fetchRegistration();
+  }, [fetchActivities, fetchRegistration]);
 
   console.log({ activities });
 
@@ -129,30 +97,26 @@ export const RecentActivities = () => {
         <Text fontWeight="500" display="block" mb={0} fontSize={3}>
           Public To-Do List Registry
         </Text>
-        {newestRegistration && (
+        {firstRegistration && (
           <Text fontWeight="500" display="block" mb={0} fontSize={2}>
-            <a href={newestRegistration.url.substr(1, newestRegistration.url.length - 2)}>
-              Newest Registration
+            <a href={firstRegistration.url.substr(1, firstRegistration.url.length - 2)}>
+              First Registration
             </a>{' '}
-            by user {newestRegistration.name} using address {newestRegistration.owner} (registry id:{' '}
-            {newestRegistration.lastId})
+            by user {firstRegistration.name} using address {firstRegistration.owner}
           </Text>
         )}
         <Text fontWeight="500" display="block" mb={0} fontSize={2}>
           Recent Activities:{' '}
           {activities.map((activity, key) => {
             if (activity.contract_call.function_name === 'register') {
-              const result = deserializeCV(Buffer.from(activity.tx_result.hex.substr(2), 'hex'));
+              const result = hexToCV(activity.tx_result.hex);
               return (
                 <React.Fragment key={key}>
                   Entry {result.value.toString()} was registered at {activity.burn_block_time_iso}.{' '}
                 </React.Fragment>
               );
             } else {
-              const name = deserializeCV(
-                Buffer.from(activity.contract_call.function_args[0].hex.substr(2), 'hex')
-              );
-
+              const name = hexToCV(activity.contract_call.function_args[0].hex);
               return (
                 <React.Fragment key={key}>
                   Entry for {cvToString(name)} was updated.{' '}
