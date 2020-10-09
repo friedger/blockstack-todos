@@ -119,7 +119,7 @@ export const RecentActivities = () => {
                   <br />
                   <Text fontSize={2}>Entry {result.value.toString()} registered </Text>
                   <Text fontSize={0} fontWeight="100">
-                    at {new Date(activity.burn_block_time_iso).toLocaleString()}
+                    at {new Date(activity.burn_block_time_iso).toLocaleString()}.
                   </Text>
                 </React.Fragment>
               );
@@ -128,7 +128,7 @@ export const RecentActivities = () => {
               return (
                 <React.Fragment key={key}>
                   <br />
-                  <Text fontSize={2}>Entry {cvToString(name)} updated</Text>
+                  <Text fontSize={2}>Entry {cvToString(name)} updated </Text>
                   <Text fontSize={0}>
                     at {new Date(activity.burn_block_time_iso).toLocaleString()}.
                   </Text>
