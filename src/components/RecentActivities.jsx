@@ -44,7 +44,7 @@ export const RecentActivities = () => {
 
     if (ownerOfResponse.okay) {
       const ownerCV = hexToCV(ownerOfResponse.result);
-      const owner = cvToString(ownerCV);
+      const owner = cvToString(ownerCV.value);
 
       // fetch public url and name
       const key = cvToHex(tupleCV({ 'registry-id': uintCV(1) }));
@@ -63,8 +63,8 @@ export const RecentActivities = () => {
         if (optionalMapEntry.type === ClarityType.OptionalSome) {
           const mapEntryCV = optionalMapEntry.value;
           const registryData = mapEntryCV.data;
-          const name = cvToString(registryData.name);
-          const url = cvToString(registryData.url);
+          const name = registryData.name.buffer.toString();
+          const url = registryData.url.buffer.toString();
 
           setFirstRegistration({
             name,
@@ -84,48 +84,60 @@ export const RecentActivities = () => {
   console.log({ activities });
 
   return activities && activities.length > 0 ? (
-    <Flex
-      display="block"
-      position="absolute"
-      bottom="0"
-      width="100%"
-      justifyContent="space-between"
-      px={4}
-      py={3}
-    >
-      <Box px={3} background="#efefef">
-        <Text fontWeight="500" display="block" mb={0} fontSize={3}>
-          Public To-Do List Registry
-        </Text>
-        {firstRegistration && (
-          <Text fontWeight="500" display="block" mb={0} fontSize={2}>
-            <a href={firstRegistration.url.substr(1, firstRegistration.url.length - 2)}>
-              First Registration
-            </a>{' '}
-            by user {firstRegistration.name} using address {firstRegistration.owner}
-          </Text>
-        )}
-        <Text fontWeight="500" display="block" mb={0} fontSize={2}>
-          Recent Activities:{' '}
+    <Box maxWidth="660px" width="100%" mx="auto" mt="75px">
+      <Flex
+        display="block"
+        width="100%"
+        justifyContent="space-between"
+        borderColor="ink.200"
+        borderWidth="1px"
+        borderRadius="8px"
+        my={4}
+        px={4}
+        py={4}
+      >
+        <Box px={3}>
+          {firstRegistration && (
+            <>
+              <Text fontWeight="500" display="block" mb={0} fontSize={0}>
+                First registration in 'Public To-Do List registry' by
+              </Text>
+              <Text fontSize={2}>
+                <a href={firstRegistration.url}>{firstRegistration.name}</a>{' '}
+              </Text>
+              <Text fontSize={0}>using address {firstRegistration.owner}</Text>
+              <br />
+            </>
+          )}
+          <Text fontSize={0}>Recent Activities in 'Public To-Do List Registry':</Text>
+
           {activities.map((activity, key) => {
             if (activity.contract_call.function_name === 'register') {
               const result = hexToCV(activity.tx_result.hex);
               return (
                 <React.Fragment key={key}>
-                  Entry {result.value.toString()} was registered at {activity.burn_block_time_iso}.{' '}
+                  <br />
+                  <Text fontSize={2}>Entry {result.value.toString()} registered </Text>
+                  <Text fontSize={0} fontWeight="100">
+                    at {new Date(activity.burn_block_time_iso).toLocaleString()}
+                  </Text>
                 </React.Fragment>
               );
             } else {
               const name = hexToCV(activity.contract_call.function_args[0].hex);
               return (
                 <React.Fragment key={key}>
-                  Entry for {cvToString(name)} was updated.{' '}
+                  <br />
+                  <Text fontSize={2}>Entry {cvToString(name)} updated</Text>
+                  <Text fontSize={0}>
+                    at {new Date(activity.burn_block_time_iso).toLocaleString()}.
+                  </Text>
                 </React.Fragment>
               );
             }
           })}
-        </Text>
-      </Box>
-    </Flex>
+        </Box>
+      </Flex>
+    </Box>
   ) : null;
 };

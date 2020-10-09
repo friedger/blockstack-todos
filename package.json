@@ -19,10 +19,10 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@blockstack/connect": "^2.12.4",
+    "@blockstack/connect": "^2.12.7",
     "@blockstack/stacks-transactions": "0.7.0",
-    "@blockstack/ui": "^2.12.9",
-    "@stacks/blockchain-api-client": "^0.25.2",
+    "@blockstack/ui": "^2.12.13",
+    "@stacks/blockchain-api-client": "^0.25.4",
     "blockstack": "^21.1.1",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",

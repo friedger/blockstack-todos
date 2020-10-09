@@ -43,6 +43,8 @@ export const Sharer = ({ togglePublic, isPublic }) => {
                   >
                     Copy Link
                   </Text>
+                  <br />
+                  <PublicUrlRegistrar userSession={userSession} />
                 </Box>
               </Flex>
             </Box>
@@ -70,9 +72,6 @@ export const Sharer = ({ togglePublic, isPublic }) => {
                   >
                     Make private
                   </Text>
-                </Box>
-                <Box px={3}>
-                  <PublicUrlRegistrar userSession={userSession} />
                 </Box>
               </Flex>
             </Box>

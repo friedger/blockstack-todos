@@ -13,7 +13,7 @@ export const PublicUrlRegistrar = ({ userSession }) => {
   const [txId, setTxId] = useState();
   const [success, setSuccess] = useState();
 
-  const register = () =>
+  const register = async () =>
     // do the contract call
     doContractCall({
       contractAddress: CONTRACT_ADDRESS,
@@ -29,13 +29,12 @@ export const PublicUrlRegistrar = ({ userSession }) => {
   useEffect(() => {
     if (txId) {
       let sub;
+      console.log(`subscribing for ${txId}`);
       const subscribe = async txId => {
         try {
-          const client = await connectWebSocketClient(
-            'ws://stacks-node-api.krypton.blockstack.org/'
-          );
+          const client = await connectWebSocketClient('wss://stacks-node-api.blockstack.org');
           sub = await client.subscribeTxUpdates(txId, update => {
-            console.log(update);
+            console.log({ update });
             const wasSuccessful = update.tx_status === 'success';
             setSuccess(wasSuccessful);
             if (wasSuccessful) {
@@ -52,24 +51,17 @@ export const PublicUrlRegistrar = ({ userSession }) => {
 
   return (
     <>
-      <Text fontWeight="500" display="block" mb={0} fontSize={2}>
-        Use the public To-do List Registry
-      </Text>
       <Text
         color="blue"
         cursor="pointer"
-        fontSize={2}
+        fontSize={1}
         fontWeight="500"
-        display="inline-block"
         onClick={() => {
           // register the public url
           register();
         }}
       >
         Register on-chain
-      </Text>
-      <Text display="block" fontSize={0}>
-        Anyone will be able to find your list
       </Text>
       {success && <Transaction txId={txId} />}
     </>
