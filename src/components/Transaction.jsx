@@ -15,7 +15,7 @@ export const Transaction = ({ txId }) => {
   }, [txId]);
 
   useEffect(() => {
-    fetchTransactionDetails();
+    void fetchTransactionDetails();
   }, [fetchTransactionDetails]);
 
   return transactionDetails ? (

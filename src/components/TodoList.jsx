@@ -30,7 +30,7 @@ export const TodoList = () => {
       setIsPublic(!!response.public);
       setLoading(false);
     };
-    doFetchTasks();
+    void doFetchTasks();
   }, [userSession]);
 
   const saveTask = ({ value, complete, index, remove }) => {
