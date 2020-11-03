@@ -77,8 +77,7 @@ export const RecentActivities = () => {
   }, []);
 
   useEffect(() => {
-    fetchActivities();
-    fetchRegistration();
+    void Promise.all([fetchActivities(), fetchRegistration()]);
   }, [fetchActivities, fetchRegistration]);
 
   console.log({ activities });
