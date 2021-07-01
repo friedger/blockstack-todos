@@ -11,18 +11,18 @@
 ;; Map of registry entries
 ;; The entry consists of username and a public url
 (define-map registry
-  ((registry-id uint))
-  (
-    (name (buff 30))
-    (url (buff 255))
-  )
+  {registry-id: uint}
+  {
+    name: (buff 30),
+    url: (buff 255)
+  }
 )
 
 ;; A lookup map between username and registry entries.
 ;; There can be only one entry per username.
 (define-map lookup
-  ((name (buff 30)))
-  ((registry-id uint))
+  {name: (buff 30)}
+  {registry-id: uint}
 )
 
 (define-data-var last-registry-id uint u0)
